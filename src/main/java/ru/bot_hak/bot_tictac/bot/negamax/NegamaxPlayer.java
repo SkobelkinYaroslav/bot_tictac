@@ -9,9 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 
-/**
- * Negamax player, with alpha-beta pruning and further optimisations
- */
+
 @Data
 @Component
 public class NegamaxPlayer{
@@ -27,12 +25,7 @@ public class NegamaxPlayer{
     private final int size = 19;
     private List<Move> moves = new ArrayList<>();
 
-    /**
-     * Determines if we need to respond to any threats on the board, if so,
-     * we use a reduced set of moves in the search.
-     * @param state State to check
-     * @return List of defensive threat moves
-     */
+
     private List<Move> getThreatResponses(State state) {
         int playerIndex = state.currentIndex;
         int opponentIndex = state.currentIndex == 2 ? 1 : 2;
@@ -45,7 +38,6 @@ public class NegamaxPlayer{
         HashSet<Move> opponentThrees = new HashSet<>();
         HashSet<Move> opponentRefutations = new HashSet<>();
 
-        // Check for threats first and respond to them if they exist
         for(int i = 0; i < state.board.length; i++) {
             for(int j = 0; j < state.board.length; j++) {
                 if(state.board[i][j].index == opponentIndex) {
@@ -67,26 +59,19 @@ public class NegamaxPlayer{
             }
         }
 
-        // We have a four on the board, play it
         if(!fours.isEmpty()) {
             return new ArrayList<>(fours);
         }
 
-        // Opponent has a four, defend against it
         if(!opponentFours.isEmpty()) {
             return new ArrayList<>(opponentFours);
         }
 
-        // We have a three that we can play to win.
-        // Either we play the three and win, or our opponent has a refutation
-        // that leads to their win. So we only consider our three and the
-        // opponents refutations.
         if(!threes.isEmpty()) {
             threes.addAll(opponentRefutations);
             return new ArrayList<>(threes);
         }
 
-        // Opponent has a three, defend against it and add refutation moves
         if(!opponentThrees.isEmpty()) {
             opponentThrees.addAll(refutations);
             return new ArrayList<>(opponentThrees);
@@ -95,15 +80,7 @@ public class NegamaxPlayer{
         return new ArrayList<>();
     }
 
-    /**
-     * Generate a list of sorted and pruned moves for this state. Moves are
-     * pruned when they are too far away from existing stones, and also when
-     * threats are found which require an immediate response.
-     * @param state State to get moves for
-     * @return A list of moves, sorted and pruned
-     */
     private List<Move> getSortedMoves(State state) {
-        // Board is empty, return a move in the middle of the board
         if(state.getMoves() == 0) {
             List<Move> moves = new ArrayList<>();
             moves.add(new Move(state.board.length / 2, state.board.length / 2));
@@ -117,7 +94,6 @@ public class NegamaxPlayer{
 
         List<ScoredMove> scoredMoves = new ArrayList<>();
 
-        // Grab closest moves
         List<Move> moves = new ArrayList<>();
         for(int i = 0; i < state.board.length; i++) {
             for(int j = 0; j < state.board.length; j++) {
@@ -131,7 +107,6 @@ public class NegamaxPlayer{
             }
         }
 
-        // Sort based on move score
         Collections.sort(scoredMoves);
         for(ScoredMove move : scoredMoves) {
             moves.add(move.move);
@@ -139,15 +114,7 @@ public class NegamaxPlayer{
         return moves;
     }
 
-    /**
-     * Run the negamax algorithm for a node in the game tree.
-     * @param state Node to search
-     * @param depth Depth to search to
-     * @param alpha Alpha bound
-     * @param beta Beta bound
-     * @return Score of the node
-     * @throws InterruptedException Timeout or interrupted by the user
-     */
+
     private int negamax(State state, int depth, int alpha, int beta)
             throws InterruptedException {
         totalNodeCount++;
@@ -182,12 +149,7 @@ public class NegamaxPlayer{
         return best;
     }
 
-    /**
-     * Run a depth-limited negamax search on a set of moves, sorting them by
-     * score.
-     * @param depth Depth to search to
-     * @return Original move list sorted by best score first
-     */
+
     private List<Move> searchMoves(State state, List<Move> moves, int depth)
             throws InterruptedException {
 
@@ -216,13 +178,7 @@ public class NegamaxPlayer{
         return moves;
     }
 
-    /**
-     * Run negamax for an increasing depth, sorting the moves after every
-     * completed search
-     * @param startDepth Start depth
-     * @param endDepth Maximum depth
-     * @return Best move found
-     */
+
     private Move iterativeDeepening(int startDepth, int endDepth)  {
         this.startTime = System.nanoTime();
         List<Move> moves = getSortedMoves(state);
@@ -237,10 +193,7 @@ public class NegamaxPlayer{
         return moves.get(0);
     }
 
-    /**
-     * Print performance information, including the amount of nodes traversed
-     * in the game tree and the nodes traversed per millisecond.
-     */
+
     private void printPerformanceInfo() {
         if(totalNodeCount > 0) {
             long duration = (System.nanoTime() - startTime) / 1000000;
@@ -250,12 +203,6 @@ public class NegamaxPlayer{
         }
     }
 
-//    public Move loadBoard(List<Move> orderedMoves) {
-//        this.moves = orderedMoves;
-//        Move bestMove = getBestMove();
-//        moves.add(bestMove);
-//        return bestMove;
-//    }
 
     public Move getMove(Move opponentsMove) {
         moves.add(opponentsMove);
@@ -265,18 +212,15 @@ public class NegamaxPlayer{
     }
 
     private Move getBestMove() {
-        // Reset performance counts, clear the hash table
         this.totalNodeCount = 0;
         this.nonLeafCount = 0;
         this.branchesExploredSum = 0;
 
-        // Create a new internal state object, sync with the game state
         this.state = new State(size);
         moves.forEach((move) -> {
             state.makeMove(move);
         });
 
-        // Run a depth increasing search
         Move best = iterativeDeepening(2, 8);
         printPerformanceInfo();
         return best;
