@@ -2,6 +2,6 @@ server:
   port: 8082
 
 config:
-  session-uuid: e09fd114-2768-469d-84a6-1abaac6e4d5a
-  bot-url: ${BOT_URL:http://localhost:8082}
-  mediator-address: ${MEDIATOR_URL:http://localhost:8080}
+  session-uuid: ${SESSION_ID}
+  bot-url: ${BOT_URL}
+  mediator-address: ${MEDIATOR_URL}
